@@ -1,5 +1,5 @@
 # Dockerfile for ELK stack
-# Elasticsearch, Logstash, Kibana 6.1.2
+# Elasticsearch 2.3.4, Logstash 5.1.1, Kibana 4.5.1
 
 # Build with:
 # docker build -t <repo-user>/elk .
@@ -39,11 +39,11 @@ RUN set -x \
  && set +x
 
 
-ENV ELK_VERSION 6.1.2
+ENV ELK_VERSION 2.3.4
 
 ### install Elasticsearch
 
-ENV ES_VERSION ${ELK_VERSION}
+ENV ES_VERSION 2.3.4
 ENV ES_HOME /opt/elasticsearch
 ENV ES_PACKAGE elasticsearch-${ES_VERSION}.tar.gz
 ENV ES_GID 991
@@ -51,7 +51,7 @@ ENV ES_UID 991
 ENV ES_PATH_CONF /etc/elasticsearch
 
 RUN mkdir ${ES_HOME} \
- && curl -O https://artifacts.elastic.co/downloads/elasticsearch/${ES_PACKAGE} \
+ && curl -O https://download.elastic.co/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch/${ES_VERSION}/${ES_PACKAGE} \
  && tar xzf ${ES_PACKAGE} -C ${ES_HOME} --strip-components=1 \
  && rm -f ${ES_PACKAGE} \
  && groupadd -r elasticsearch -g ${ES_GID} \
@@ -66,7 +66,7 @@ RUN sed -i -e 's#^ES_HOME=$#ES_HOME='$ES_HOME'#' /etc/init.d/elasticsearch \
 
 ### install Logstash
 
-ENV LOGSTASH_VERSION ${ELK_VERSION}
+ENV LOGSTASH_VERSION 5.1.1
 ENV LOGSTASH_HOME /opt/logstash
 ENV LOGSTASH_PACKAGE logstash-${LOGSTASH_VERSION}.tar.gz
 ENV LOGSTASH_GID 992
@@ -85,17 +85,21 @@ ADD ./logstash-init /etc/init.d/logstash
 RUN sed -i -e 's#^LS_HOME=$#LS_HOME='$LOGSTASH_HOME'#' /etc/init.d/logstash \
  && chmod +x /etc/init.d/logstash
 
+WORKDIR ${LOGSTASH_HOME}
+# RUN gosu logstash bin/logstash-plugin install logstash-input-csv
+RUN gosu logstash bin/logstash-plugin install logstash-output-elasticsearch
+RUN gosu logstash bin/logstash-plugin install logstash-input-elasticsearch
 
 ### install Kibana
 
-ENV KIBANA_VERSION ${ELK_VERSION}
+ENV KIBANA_VERSION 4.5.1
 ENV KIBANA_HOME /opt/kibana
-ENV KIBANA_PACKAGE kibana-${KIBANA_VERSION}-linux-x86_64.tar.gz
+ENV KIBANA_PACKAGE kibana-${KIBANA_VERSION}-linux-x64.tar.gz
 ENV KIBANA_GID 993
 ENV KIBANA_UID 993
 
 RUN mkdir ${KIBANA_HOME} \
- && curl -O https://artifacts.elastic.co/downloads/kibana/${KIBANA_PACKAGE} \
+ && curl -O https://download.elastic.co/kibana/kibana/${KIBANA_PACKAGE} \
  && tar xzf ${KIBANA_PACKAGE} -C ${KIBANA_HOME} --strip-components=1 \
  && rm -f ${KIBANA_PACKAGE} \
  && groupadd -r kibana -g ${KIBANA_GID} \
@@ -107,6 +111,8 @@ ADD ./kibana-init /etc/init.d/kibana
 RUN sed -i -e 's#^KIBANA_HOME=$#KIBANA_HOME='$KIBANA_HOME'#' /etc/init.d/kibana \
  && chmod +x /etc/init.d/kibana
 
+WORKDIR ${KIBANA_HOME}
+RUN gosu kibana bin/kibana plugin --install elastic/sense
 
 ###############################################################################
 #                               CONFIGURATION
@@ -116,10 +122,10 @@ RUN sed -i -e 's#^KIBANA_HOME=$#KIBANA_HOME='$KIBANA_HOME'#' /etc/init.d/kibana 
 
 ADD ./elasticsearch.yml ${ES_PATH_CONF}/elasticsearch.yml
 ADD ./elasticsearch-default /etc/default/elasticsearch
-RUN cp ${ES_HOME}/config/log4j2.properties ${ES_HOME}/config/jvm.options \
-    ${ES_PATH_CONF} \
- && chown -R elasticsearch:elasticsearch ${ES_PATH_CONF} \
- && chmod -R +r ${ES_PATH_CONF}
+# RUN cp ${ES_HOME}/config/log4j2.properties ${ES_HOME}/config/jvm.options \
+#    ${ES_PATH_CONF} \
+# && chown -R elasticsearch:elasticsearch ${ES_PATH_CONF} \
+# && chmod -R +r ${ES_PATH_CONF}
 
 ### configure Logstash
 
