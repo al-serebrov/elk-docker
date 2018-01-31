@@ -1,5 +1,10 @@
 # Elasticsearch, Logstash, Kibana (ELK) Docker image
 
+Forked to use the following versions:
+Elasticsearch 2.3.4
+Logstash 5.1.1
+Kibana 4.5.1
+
 [![](https://badge.imagelayers.io/sebp/elk:latest.svg)](https://imagelayers.io/?images=sebp/elk:latest 'Get your own badge on imagelayers.io') [![Documentation Status](https://readthedocs.org/projects/elk-docker/badge/?version=latest)](http://elk-docker.readthedocs.io/?badge=latest)
 
 This Docker image provides a convenient centralised log server and log management web interface, by packaging Elasticsearch, Logstash, and Kibana, collectively known as ELK.
